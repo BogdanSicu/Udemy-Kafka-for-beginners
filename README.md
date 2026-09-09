@@ -18,7 +18,7 @@ Helping platform: https://www.conduktor.io/apache-kafka-for-beginners
 
 În esență, Kafka funcționează ca un sistem de mesagerie publicare-abonare (*publish-subscribe*), dar cu garanții stricte de persistență și ordine a datelor.
 
-```mermaid
+````
 graph TD
     P1[Producer 1] -->|Trimite Mesaje| T1[Topic: Partitia 0]
     P2[Producer 2] -->|Trimite Mesaje| T2[Topic: Partitia 1]
@@ -28,7 +28,7 @@ graph TD
     end
     T1 -->|Consumă Date| C1[Consumer Group A - C1]
     T2 -->|Consumă Date| C2[Consumer Group A - C2]
-```
+````
 
 ### Componente Principale:
 *   **Eveniment / Mesaj (Event/Message):** Unitatea fundamentală de date din Kafka. Este compus dintr-o cheie (*key*), un text/valoare (*value*), un marcaj de timp (*timestamp*) și metadate opționale.
