@@ -101,3 +101,479 @@ Performanța remarcabilă a Kafka se datorează unor decizii inteligente de ingi
 ## Section 5 - Starting Kafka
 
 Pentru asta exista ghiduri separate in functie de sistemul de operare: https://www.conduktor.io/kafka/starting-kafka
+
+# Section 7 - Kafka CLI 101
+
+ Kafka CLI command reference for local development.
+
+ **Kafka broker:** `localhost:9092`
+
+ ## Prerequisites
+
+ Make sure Kafka is running and accessible on `localhost:9092`.
+
+ Optionally define the broker as an environment variable:
+
+```
+export KAFKA_BROKER=localhost:9092
+```
+
+ The examples below assume Kafka CLI scripts are available under `bin/`.
+
+---
+
+ ## Topics
+
+ ### List Topics
+
+```
+bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --list
+```
+
+ ### Create a Topic
+
+```
+bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --create \
+  --topic my-topic
+```
+
+ Create a topic with 3 partitions:
+
+```
+bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --create \
+  --topic my-topic \
+  --partitions 3 \
+  --replication-factor 1
+```
+
+ > For a single local Kafka broker, use `--replication-factor 1`.
+
+ ### Describe a Topic
+
+```
+bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --describe \
+  --topic my-topic
+```
+
+ ### Delete a Topic
+
+```
+bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --delete \
+  --topic my-topic
+```
+
+ ### Increase Number of Partitions
+
+ Increase `my-topic` to 6 partitions:
+
+```
+bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --alter \
+  --topic my-topic \
+  --partitions 6
+```
+
+ > Kafka allows increasing the number of partitions, but not decreasing them.
+
+---
+
+ ## Producing Messages
+
+ ### Start a Console Producer
+
+```
+bin/kafka-console-producer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic my-topic
+```
+
+ Enter messages interactively:
+
+```
+Hello Kafka
+First message
+Second message
+```
+
+ Press `Ctrl+C` to exit.
+
+ ### Produce a Single Message
+
+```
+echo "Hello Kafka" | \
+  bin/kafka-console-producer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic my-topic
+```
+
+ ### Produce Key/Value Messages
+
+ Use `:` as the key/value separator:
+
+```
+bin/kafka-console-producer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic my-topic \
+  --property "parse.key=true" \
+  --property "key.separator=:"
+```
+
+ Example:
+
+```
+user-1:Hello
+user-2:Hello Kafka
+user-3:Another message
+```
+
+---
+
+ ## Consuming Messages
+
+ ### Start a Console Consumer
+
+```
+bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic my-topic
+```
+
+ The consumer waits for new messages.
+
+ ### Consume From the Beginning
+
+```
+bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic my-topic \
+  --from-beginning
+```
+
+ ### Consume a Limited Number of Messages
+
+ Read 10 messages and exit:
+
+```
+bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic my-topic \
+  --from-beginning \
+  --max-messages 10
+```
+
+ ### Consume From a Specific Partition
+
+```
+bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic my-topic \
+  --partition 0 \
+  --from-beginning
+```
+
+ ### Consume Messages With Keys
+
+```
+bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic my-topic \
+  --from-beginning \
+  --property print.key=true \
+  --property key.separator=" : "
+```
+
+ Example output:
+
+```
+user-1 : Hello
+user-2 : Hello Kafka
+```
+
+---
+
+ ## Consumer Groups
+
+ ### List Consumer Groups
+
+```
+bin/kafka-consumer-groups.sh \
+  --bootstrap-server localhost:9092 \
+  --list
+```
+
+ ### Describe a Consumer Group
+
+```
+bin/kafka-consumer-groups.sh \
+  --bootstrap-server localhost:9092 \
+  --describe \
+  --group my-group
+```
+
+ This displays information such as:
+
+ - Topic
+- Partition
+- Current offset
+- Log end offset
+- Consumer lag
+- Consumer ID
+- Host
+
+ ### Consume Using a Consumer Group
+
+```
+bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic my-topic \
+  --group my-group
+```
+
+ Start multiple consumers using the same group ID:
+
+```
+bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic my-topic \
+  --group my-group
+```
+
+ Kafka distributes partitions between consumers in the same group.
+
+---
+
+ ## Consumer Offset Management
+
+ ### Reset to the Earliest Offset
+
+ Preview the reset:
+
+```
+bin/kafka-consumer-groups.sh \
+  --bootstrap-server localhost:9092 \
+  --group my-group \
+  --topic my-topic \
+  --reset-offsets \
+  --to-earliest
+```
+
+ Execute the reset:
+
+```
+bin/kafka-consumer-groups.sh \
+  --bootstrap-server localhost:9092 \
+  --group my-group \
+  --topic my-topic \
+  --reset-offsets \
+  --to-earliest \
+  --execute
+```
+
+ Other useful reset options:
+
+```
+--to-earliest
+--to-latest
+--to-offset <offset>
+--shift-by <number>
+--to-datetime <datetime>
+```
+
+---
+
+ ## Offsets
+
+ ### Get Topic Offsets
+
+```
+bin/kafka-get-offsets.sh \
+  --bootstrap-server localhost:9092 \
+  --topic my-topic
+```
+
+ ### Get Offsets for a Specific Partition
+
+```
+bin/kafka-get-offsets.sh \
+  --bootstrap-server localhost:9092 \
+  --topic my-topic \
+  --partition 0
+```
+
+---
+
+ ## Topic Configuration
+
+ ### View Topic Configuration
+
+```
+bin/kafka-configs.sh \
+  --bootstrap-server localhost:9092 \
+  --entity-type topics \
+  --entity-name my-topic \
+  --describe
+```
+
+ ### Change Topic Retention
+
+ Set the retention period to 1 hour:
+
+```
+bin/kafka-configs.sh \
+  --bootstrap-server localhost:9092 \
+  --entity-type topics \
+  --entity-name my-topic \
+  --alter \
+  --add-config retention.ms=3600000
+```
+
+ ### Remove Custom Retention Configuration
+
+```
+bin/kafka-configs.sh \
+  --bootstrap-server localhost:9092 \
+  --entity-type topics \
+  --entity-name my-topic \
+  --alter \
+  --delete-config retention.ms
+```
+
+---
+
+ ## Common Development Workflow
+
+ ### 1\. Create a Topic
+
+```
+bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --create \
+  --topic test-topic \
+  --partitions 1 \
+  --replication-factor 1
+```
+
+ ### 2\. Start a Consumer
+
+ In one terminal:
+
+```
+bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic test-topic \
+  --from-beginning
+```
+
+ ### 3\. Start a Producer
+
+ In another terminal:
+
+```
+bin/kafka-console-producer.sh \
+  --bootstrap-server localhost:9092 \
+  --topic test-topic
+```
+
+ ### 4\. Send Messages
+
+```
+message 1
+message 2
+message 3
+```
+
+ The consumer should receive the messages.
+
+---
+
+ ## Quick Reference
+
+ | Operation | Command |
+| --- | --- |
+| List topics | `kafka-topics.sh --bootstrap-server localhost:9092 --list` |
+| Create topic | `kafka-topics.sh --bootstrap-server localhost:9092 --create --topic my-topic` |
+| Describe topic | `kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic my-topic` |
+| Delete topic | `kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic my-topic` |
+| Produce messages | `kafka-console-producer.sh --bootstrap-server localhost:9092 --topic my-topic` |
+| Consume messages | `kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic my-topic` |
+| Consume from beginning | `kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic my-topic --from-beginning` |
+| List consumer groups | `kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list` |
+| Describe consumer group | `kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group my-group` |
+| Get offsets | `kafka-get-offsets.sh --bootstrap-server localhost:9092 --topic my-topic` |
+
+---
+
+ ## Using `KAFKA_BROKER`
+
+ Set the broker once:
+
+```
+export KAFKA_BROKER=localhost:9092
+```
+
+ Then use:
+
+```
+bin/kafka-topics.sh \
+  --bootstrap-server $KAFKA_BROKER \
+  --list
+```
+
+ Producer:
+
+```
+bin/kafka-console-producer.sh \
+  --bootstrap-server $KAFKA_BROKER \
+  --topic my-topic
+```
+
+ Consumer:
+
+```
+bin/kafka-console-consumer.sh \
+  --bootstrap-server $KAFKA_BROKER \
+  --topic my-topic \
+  --from-beginning
+```
+
+---
+
+ ## Docker
+
+ If Kafka is running in Docker and port `9092` is exposed to the host, the following works from the host:
+
+```
+bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --list
+```
+
+ If running the Kafka CLI **inside the Kafka container**, the broker address may instead be:
+
+```
+kafka:9092
+```
+
+ The exact address depends on your Docker/Compose configuration.
+
+---
+
+ ## Notes
+
+ - `localhost:9092` assumes Kafka is accessible from the machine where the CLI command is executed.
+- For a single-broker local Kafka setup, use replication factor `1`.
+- Topic partition counts can be increased but not decreased.
+- Use `--from-beginning` when you want to inspect existing messages.
+- Be careful with consumer-group offset resets because `--execute` changes the group's committed offsets.
+- Topic deletion depends on the broker's topic-deletion configuration.
