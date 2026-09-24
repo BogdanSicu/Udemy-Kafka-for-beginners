@@ -1,4 +1,4 @@
-package org.example.io.conduktor.demos.kafka;
+package org.example.io.conduktor.demos.kafka.producer;
 
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
-public class ProducerDemoKeys {
+public class ProducerDemoWithCallback {
 
-    private static final Logger log = LoggerFactory.getLogger(ProducerDemoKeys.class.getSimpleName());
+    private static final Logger log = LoggerFactory.getLogger(ProducerDemoWithCallback.class.getSimpleName());
     public static void main(String[] args) {
         log.info("-----------------I am a Kafka Producer----------------------");
 
@@ -26,20 +26,18 @@ public class ProducerDemoKeys {
         properties.setProperty("key.serializer", StringSerializer.class.getName());
         properties.setProperty("value.serializer", StringSerializer.class.getName());
 
+        properties.setProperty("batch.size", "400");
 //endregion
 
 //region create the Producer
         KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
 
-        for(int j=0;j<2;j++) {
+        for(int j=0; j<10; j++) { // kafka saves records in batches if sent multiple at a time
+
             for (int i = 0; i < 30; i++) {
 
-                String topic = "demo_java";
-                String key = "id_" + i;
-                String value = "Hello World " + i;
-
                 //create Producer Record
-                ProducerRecord<String, String> producerRecord = new ProducerRecord<>(topic, key, value);
+                ProducerRecord<String, String> producerRecord = new ProducerRecord<>("demo_java", "Hello World " + i);
 
                 //region send data
                 producer.send(producerRecord, new Callback() {
@@ -48,13 +46,23 @@ public class ProducerDemoKeys {
                         // executes every time a record is successfully sent or an exception is thrown
                         if (exception == null) {
                             //the record was successfully sent
-                            log.info("Key: " + key + " | Partition: " + metadata.partition());
+                            log.info("Received new metadata \n" +
+                                    "Topic: " + metadata.topic() + "\n" +
+                                    "Partition: " + metadata.partition() + "\n" +
+                                    "Offset: " + metadata.offset() + "\n" +
+                                    "Timestamp: " + metadata.timestamp() + "\n");
                         } else {
                             log.error("Error while producing", exception);
                         }
                     }
                 });
                 //endregion
+            }
+
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
         }
 //endregion
