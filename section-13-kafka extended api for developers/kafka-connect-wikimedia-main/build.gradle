@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'io.conduktor.demos'
+version = findProperty('version') ?: '1.1.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Kafka Connect API - provided at runtime
+    implementation 'org.apache.kafka:connect-api:3.6.1'
+
+    // Logging - provided at runtime by Kafka Connect
+    implementation 'org.slf4j:slf4j-api:1.7.36'
+
+    // SSE client - keep v2.x for API compatibility
+    implementation 'com.launchdarkly:okhttp-eventsource:2.7.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+}
+
+shadowJar {
+    archiveClassifier.set('all')
+    dependencies {
+        exclude(dependency('org.apache.kafka:connect-api'))
+        exclude(dependency('org.slf4j:slf4j-api'))
+    }
+}
+
+tasks.named('build') {
+    dependsOn shadowJar
+}
